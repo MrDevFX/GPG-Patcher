@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>GpgPatcher.Gui</RootNamespace>
+    <AssemblyName>GPG Patcher</AssemblyName>
+    <ApplicationIcon>..\..\Resource\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\GpgPatcher.Core.csproj" />
+    <ProjectReference Include="..\Hooks\GpgPatcher.Hooks.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\Resource\logo.png" LogicalName="GpgPatcher.Gui.Branding.logo.png" />
+    <EmbeddedResource Include="..\..\Resource\app.ico" LogicalName="GpgPatcher.Gui.Branding.app.ico" />
+  </ItemGroup>
+
+  <Target Name="DeleteLegacyGuiOutputs" BeforeTargets="Build">
+    <ItemGroup>
+      <LegacyGuiOutputs Include="$(OutDir)GpgPatcher.Gui.exe" />
+      <LegacyGuiOutputs Include="$(OutDir)GpgPatcher.Gui.exe.config" />
+      <LegacyGuiOutputs Include="$(OutDir)GpgPatcher.Gui.pdb" />
+    </ItemGroup>
+
+    <Delete Files="@(LegacyGuiOutputs)" ContinueOnError="true" />
+  </Target>
+
+</Project>

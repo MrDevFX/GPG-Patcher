@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>GpgPatcher.Hooks</RootNamespace>
+    <AssemblyName>GpgPatcher.Hooks</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ServiceLibHintPath Condition="Exists('$(LOCALAPPDATA)\GpgPatcher\backup\26.3.725.2\ServiceLib.dll')">$(LOCALAPPDATA)\GpgPatcher\backup\26.3.725.2\ServiceLib.dll</ServiceLibHintPath>
+    <ServiceLibHintPath Condition="'$(ServiceLibHintPath)' == '' and Exists('$(LOCALAPPDATA)\GpgResPoC\backup\26.3.725.2\ServiceLib.dll')">$(LOCALAPPDATA)\GpgResPoC\backup\26.3.725.2\ServiceLib.dll</ServiceLibHintPath>
+    <ServiceLibHintPath Condition="'$(ServiceLibHintPath)' == ''">C:\Program Files\Google\Play Games\current\service\ServiceLib.dll</ServiceLibHintPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="ServiceLib">
+      <HintPath>$(ServiceLibHintPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Ipc.Protos">
+      <HintPath>C:\Program Files\Google\Play Games\current\service\Ipc.Protos.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Google.Protobuf">
+      <HintPath>C:\Program Files\Google\Play Games\current\service\Google.Protobuf.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

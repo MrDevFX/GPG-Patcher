@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/Core/GpgPatcher.Core.csproj" />
+  <Project Path="src/Hooks/GpgPatcher.Hooks.csproj" />
+  <Project Path="src/App/GpgPatcher.Gui.csproj" />
+</Solution>
