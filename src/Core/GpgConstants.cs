@@ -1,11 +1,15 @@
 namespace GpgPatcher
 {
-    internal static class GpgConstants
+    public static class GpgConstants
     {
-        public const string SupportedVersion = "26.3.725.2";
         public const string TargetPackageName = "com.gof.global";
-        public const int TargetWidth = 1216;
-        public const int TargetHeight = 2160;
+        public const int TargetWidth = 2160;
+        public const int TargetHeight = 3840;
+
+        public static string TargetResolutionLabel
+        {
+            get { return TargetWidth + "x" + TargetHeight; }
+        }
         public const string AppDataDirectoryName = "GpgPatcher";
         public const string LegacyAppDataDirectoryName = "GpgResPoC";
         public const string HookAssemblyName = "GpgPatcher.Hooks";

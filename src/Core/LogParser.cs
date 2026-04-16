@@ -27,6 +27,18 @@ namespace GpgPatcher
             new Regex("on displayId\\s+(\\d+)",
                 RegexOptions.Compiled);
 
+        private static readonly Regex AndroidSerialFinalSizeRegex =
+            new Regex("AndroidDisplayManagerIm: Display \\d+ size is (\\d+)x(\\d+)",
+                RegexOptions.Compiled);
+
+        private static readonly Regex AndroidSerialDisplaySizeSetRegex =
+            new Regex("DisplayControllerImpl: Display size set to (\\d+)x(\\d+)",
+                RegexOptions.Compiled);
+
+        private static readonly Regex AndroidSerialWindowManagerSizeRegex =
+            new Regex("WindowManager: Using new display size: (\\d+)x(\\d+)",
+                RegexOptions.Compiled);
+
         private static readonly Regex AndroidSerialAddedRegex =
             new Regex("Display device added: .*? (\\d+) x (\\d+), .*?DeviceProductInfo\\{name=CrosvmDisplay",
                 RegexOptions.Compiled);
@@ -100,15 +112,29 @@ namespace GpgPatcher
             for (var i = lines.Length - 1; i >= 0; i--)
             {
                 var line = lines[i];
-                var match = AndroidSerialAddedRegex.Match(line);
-                if (!match.Success)
+                var finalSizeMatch = AndroidSerialFinalSizeRegex.Match(line);
+                if (finalSizeMatch.Success)
                 {
-                    continue;
+                    return CreateAndroidSerialDisplayEntry(finalSizeMatch, line);
                 }
 
-                var width = ParseInt(match.Groups[1].Value);
-                var height = ParseInt(match.Groups[2].Value);
-                return new AndroidSerialDisplayEntry(new DisplaySizeSnapshot(width, height), line);
+                var displaySizeSetMatch = AndroidSerialDisplaySizeSetRegex.Match(line);
+                if (displaySizeSetMatch.Success)
+                {
+                    return CreateAndroidSerialDisplayEntry(displaySizeSetMatch, line);
+                }
+
+                var windowManagerSizeMatch = AndroidSerialWindowManagerSizeRegex.Match(line);
+                if (windowManagerSizeMatch.Success)
+                {
+                    return CreateAndroidSerialDisplayEntry(windowManagerSizeMatch, line);
+                }
+
+                var addedMatch = AndroidSerialAddedRegex.Match(line);
+                if (addedMatch.Success)
+                {
+                    return CreateAndroidSerialDisplayEntry(addedMatch, line);
+                }
             }
 
             return null;
@@ -173,6 +199,15 @@ namespace GpgPatcher
             }
 
             return ParseInt(match.Groups[1].Value);
+        }
+
+        private static AndroidSerialDisplayEntry CreateAndroidSerialDisplayEntry(Match match, string rawLine)
+        {
+            return new AndroidSerialDisplayEntry(
+                new DisplaySizeSnapshot(
+                    ParseInt(match.Groups[1].Value),
+                    ParseInt(match.Groups[2].Value)),
+                rawLine);
         }
 
         private static int ParseInt(string value)

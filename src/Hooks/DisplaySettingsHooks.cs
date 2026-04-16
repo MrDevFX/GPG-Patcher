@@ -8,8 +8,8 @@ namespace GpgPatcher.Hooks
     public static class DisplaySettingsHooks
     {
         public const string TargetPackageName = "com.gof.global";
-        public const int TargetWidth = 1216;
-        public const int TargetHeight = 2160;
+        public const int TargetWidth = 2160;
+        public const int TargetHeight = 3840;
 
         public static AndroidDisplay.AvailableSettings PatchAvailableSettings(
             AndroidDisplay.AvailableSettings settings,

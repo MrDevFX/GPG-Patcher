@@ -59,15 +59,16 @@ namespace GpgPatcher
 
         private static void Inspect(PlayGamesInstallLayout layout)
         {
-            var version = PatchStatusInspector.GetInstalledVersion(layout);
             var patchStatus = PatchStatusInspector.Inspect(layout);
             var launch = LogParser.TryGetLatestLaunch(layout.ServiceLogPath, GpgConstants.TargetPackageName);
             var cap = LogParser.TryGetLatestResolutionCap(layout.ServiceLogPath);
             var androidSerial = LogParser.TryGetLatestAndroidSerialDisplay(layout.AndroidSerialLogPath);
 
             Console.WriteLine("Google Play Games");
-            Console.WriteLine("  version: " + version);
-            Console.WriteLine("  compatible: " + string.Equals(version, GpgConstants.SupportedVersion, StringComparison.Ordinal));
+            Console.WriteLine("  version: " + patchStatus.InstalledVersion);
+            Console.WriteLine("  compatible: " + patchStatus.IsCompatible);
+            Console.WriteLine("  compatibility state: " + patchStatus.CompatibilityState);
+            Console.WriteLine("  compatibility message: " + patchStatus.CompatibilityMessage);
             Console.WriteLine("  service dir: " + layout.ServiceDirectory);
             Console.WriteLine();
 
@@ -109,9 +110,9 @@ namespace GpgPatcher
             EnsureAdministrator();
             layout.EnsureInstallationExists();
             layout.EnsureHookBuildExists();
-            EnsureSupportedVersion(layout);
 
             var patchStatus = PatchStatusInspector.Inspect(layout);
+            EnsureCompatibleForPatch(patchStatus);
             if (!patchStatus.BackupPresent && patchStatus.IsPatched)
             {
                 throw new FriendlyException(
@@ -177,13 +178,11 @@ namespace GpgPatcher
             var patchStatus = PatchStatusInspector.Inspect(layout);
 
             var expectedDisplaySize = new DisplaySizeSnapshot(GpgConstants.TargetWidth, GpgConstants.TargetHeight);
-            var expectedDensity = 359;
 
             var launchMatches = launch != null
                 && launch.DisplaySize != null
                 && launch.DisplaySize.Width == expectedDisplaySize.Width
                 && launch.DisplaySize.Height == expectedDisplaySize.Height
-                && launch.DisplayDensity == expectedDensity
                 && launch.AvailableDisplaySizes.Any(size => size.Width == expectedDisplaySize.Width && size.Height == expectedDisplaySize.Height);
 
             var serialMatches = androidSerial != null
@@ -192,7 +191,7 @@ namespace GpgPatcher
 
             Console.WriteLine("Verify");
             Console.WriteLine("  expected launch size: " + expectedDisplaySize);
-            Console.WriteLine("  expected scaled density: " + expectedDensity);
+            Console.WriteLine("  expected scaled density: runtime-derived");
             Console.WriteLine("  latest launch size: " + (launch == null || launch.DisplaySize == null ? "(not found)" : launch.DisplaySize.ToString()));
             Console.WriteLine("  latest launch density: " + (launch == null || !launch.DisplayDensity.HasValue ? "(not found)" : launch.DisplayDensity.Value.ToString()));
             Console.WriteLine("  latest available sizes: " + (launch == null ? "(not found)" : LogParser.FormatDisplaySizes(launch.AvailableDisplaySizes)));
@@ -208,10 +207,9 @@ namespace GpgPatcher
 
             Console.WriteLine("FAIL: the latest logs do not show the patched UHD portrait launch yet.");
 
-            if ((cap == null || !string.Equals(cap.Cap, "UltraHD2160p", StringComparison.Ordinal))
-                && !patchStatus.PhenotypeOverridePresent)
+            if (!patchStatus.PhenotypeOverridePresent)
             {
-                Console.WriteLine("Hint: the service does not currently look UHD-enabled; rerun Patch with phenotype fallback enabled if you want to try the config override.");
+                Console.WriteLine("Hint: if the target size is missing from the latest logs, rerun Patch with phenotype fallback enabled and try again.");
             }
             else
             {
@@ -306,15 +304,16 @@ namespace GpgPatcher
             document.Save(layout.ServiceConfigPath);
         }
 
-        private static void EnsureSupportedVersion(PlayGamesInstallLayout layout)
+        private static void EnsureCompatibleForPatch(PatchStatus patchStatus)
         {
-            var installedVersion = PatchStatusInspector.GetInstalledVersion(layout);
-            if (!string.Equals(installedVersion, GpgConstants.SupportedVersion, StringComparison.Ordinal))
+            if (patchStatus.IsCompatible)
             {
-                throw new FriendlyException(
-                    "GPG Patcher is pinned to Google Play Games " + GpgConstants.SupportedVersion
-                    + ", but the installed version is " + installedVersion + ".");
+                return;
             }
+
+            throw new FriendlyException(
+                "This Google Play Games build is not structurally compatible with the current patcher: "
+                + patchStatus.CompatibilityMessage);
         }
 
         private static void EnsureBackupExists(PlayGamesInstallLayout layout)
@@ -369,7 +368,7 @@ namespace GpgPatcher
             Console.WriteLine("  patch [--phenotype-fallback]");
             Console.WriteLine("    Back up files, apply the host-side IL patch, optionally force the phenotype override, and restart the Play Games service.");
             Console.WriteLine("  verify");
-            Console.WriteLine("    Read the latest logs and confirm whether Whiteout Survival launched at 1216x2160 with scaled density.");
+            Console.WriteLine("    Read the latest logs and confirm whether Whiteout Survival launched at " + GpgConstants.TargetResolutionLabel + ".");
             Console.WriteLine("  restore");
             Console.WriteLine("    Restore original files from backup and restart the Play Games service.");
         }

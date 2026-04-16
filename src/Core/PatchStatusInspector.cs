@@ -11,7 +11,12 @@ namespace GpgPatcher
         public static string GetInstalledVersion(PlayGamesInstallLayout layout)
         {
             layout.EnsureInstallationExists();
-            var version = System.Diagnostics.FileVersionInfo.GetVersionInfo(layout.ServiceExePath).FileVersion;
+            return GetInstalledVersion(layout.ServiceExePath);
+        }
+
+        public static string GetInstalledVersion(string serviceExePath)
+        {
+            var version = System.Diagnostics.FileVersionInfo.GetVersionInfo(serviceExePath).FileVersion;
             return string.IsNullOrWhiteSpace(version) ? string.Empty : version.Trim();
         }
 
@@ -21,27 +26,29 @@ namespace GpgPatcher
 
             var patchStatus = new PatchStatus
             {
+                InstalledVersion = GetInstalledVersion(layout.ServiceExePath),
                 HookDllPresent = File.Exists(layout.HookTargetPath) || File.Exists(layout.LegacyHookTargetPath),
                 BackupPresent = layout.HasCurrentBackup || layout.HasLegacyBackup,
             };
 
             using (var module = ModuleDefMD.Load(layout.ServiceLibPath))
             {
-                var serviceType = module.Types.FirstOrDefault(type => type.FullName == GpgConstants.ServiceTypeName);
-                if (serviceType == null)
+                PopulateCompatibility(patchStatus, module);
+
+                if (patchStatus.IsCompatible)
                 {
-                    throw new FriendlyException("Could not find AppSessionScope in ServiceLib.dll.");
+                    var serviceType = module.Types.First(type => type.FullName == GpgConstants.ServiceTypeName);
+                    var availableMethod = ServiceLibPatcher.FindTargetMethod(serviceType, GpgConstants.AvailableSettingsMethodName);
+                    var launchMethod = ServiceLibPatcher.FindTargetMethod(serviceType, GpgConstants.LaunchSettingsMethodName);
+
+                    patchStatus.AvailableSettingsPatched = ServiceLibPatcher.HasAnyHookCall(
+                        availableMethod,
+                        GpgConstants.PatchAvailableSettingsMethod);
+                    patchStatus.LaunchSettingsPatched = ServiceLibPatcher.HasAnyHookCall(
+                        launchMethod,
+                        GpgConstants.PatchAndroidDisplaySettingsMethod);
                 }
 
-                var availableMethod = ServiceLibPatcher.FindTargetMethod(serviceType, GpgConstants.AvailableSettingsMethodName);
-                var launchMethod = ServiceLibPatcher.FindTargetMethod(serviceType, GpgConstants.LaunchSettingsMethodName);
-
-                patchStatus.AvailableSettingsPatched = ServiceLibPatcher.HasAnyHookCall(
-                    availableMethod,
-                    GpgConstants.PatchAvailableSettingsMethod);
-                patchStatus.LaunchSettingsPatched = ServiceLibPatcher.HasAnyHookCall(
-                    launchMethod,
-                    GpgConstants.PatchAndroidDisplaySettingsMethod);
                 patchStatus.HookAssemblyReferencePresent = module.GetAssemblyRefs()
                     .Any(reference =>
                         string.Equals(reference.Name, GpgConstants.HookAssemblyName, StringComparison.Ordinal)
@@ -52,6 +59,57 @@ namespace GpgPatcher
             patchStatus.PhenotypeOverridePresent = !string.IsNullOrWhiteSpace(patchStatus.PhenotypeOverrideValue);
 
             return patchStatus;
+        }
+
+        private static void PopulateCompatibility(PatchStatus patchStatus, ModuleDefMD module)
+        {
+            var serviceType = module.Types.FirstOrDefault(type => type.FullName == GpgConstants.ServiceTypeName);
+            if (serviceType == null)
+            {
+                patchStatus.IsCompatible = false;
+                patchStatus.CompatibilityState = "TargetTypeMissing";
+                patchStatus.CompatibilityMessage = "Could not find AppSessionScope in ServiceLib.dll.";
+                return;
+            }
+
+            MethodDef availableMethod;
+            try
+            {
+                availableMethod = ServiceLibPatcher.FindTargetMethod(serviceType, GpgConstants.AvailableSettingsMethodName);
+            }
+            catch (FriendlyException ex)
+            {
+                patchStatus.IsCompatible = false;
+                patchStatus.CompatibilityState = "AvailableSettingsIncompatible";
+                patchStatus.CompatibilityMessage = ex.Message;
+                return;
+            }
+
+            MethodDef launchMethod;
+            try
+            {
+                launchMethod = ServiceLibPatcher.FindTargetMethod(serviceType, GpgConstants.LaunchSettingsMethodName);
+            }
+            catch (FriendlyException ex)
+            {
+                patchStatus.IsCompatible = false;
+                patchStatus.CompatibilityState = "LaunchSettingsIncompatible";
+                patchStatus.CompatibilityMessage = ex.Message;
+                return;
+            }
+
+            if (ServiceLibPatcher.HasLegacyHookCall(availableMethod, GpgConstants.PatchAvailableSettingsMethod)
+                || ServiceLibPatcher.HasLegacyHookCall(launchMethod, GpgConstants.PatchAndroidDisplaySettingsMethod))
+            {
+                patchStatus.IsCompatible = false;
+                patchStatus.CompatibilityState = "LegacyPatchDetected";
+                patchStatus.CompatibilityMessage = "A legacy pre-rename patch was detected. Restore the original files first, then apply the current GPG Patcher build.";
+                return;
+            }
+
+            patchStatus.IsCompatible = true;
+            patchStatus.CompatibilityState = "Compatible";
+            patchStatus.CompatibilityMessage = "Target methods and signatures match; safe to patch this build.";
         }
 
         private static string ReadPhenotypeOverride(string configPath)

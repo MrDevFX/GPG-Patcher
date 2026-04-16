@@ -8,6 +8,10 @@ namespace GpgPatcher.Gui
 
         public string Compatible { get; set; }
 
+        public string CompatibilityState { get; set; }
+
+        public string CompatibilityMessage { get; set; }
+
         public string ServiceLibPatched { get; set; }
 
         public string HookDllPresent { get; set; }
@@ -73,6 +77,8 @@ namespace GpgPatcher.Gui
 
                 ReadValue(line, "version:", value => summary.Version = value);
                 ReadValue(line, "compatible:", value => summary.Compatible = value);
+                ReadValue(line, "compatibility state:", value => summary.CompatibilityState = value);
+                ReadValue(line, "compatibility message:", value => summary.CompatibilityMessage = value);
                 ReadValue(line, "service lib patched:", value => summary.ServiceLibPatched = value);
                 ReadValue(line, "available-settings hook:", value => summary.AvailableSettingsHook = value);
                 ReadValue(line, "launch-settings hook:", value => summary.LaunchSettingsHook = value);

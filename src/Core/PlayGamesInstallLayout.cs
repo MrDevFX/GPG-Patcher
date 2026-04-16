@@ -106,17 +106,22 @@ namespace GpgPatcher
                 "Play Games",
                 "Logs");
 
+            var serviceExePath = Path.Combine(serviceDirectory, "Service.exe");
+            var installedVersion = File.Exists(serviceExePath)
+                ? PatchStatusInspector.GetInstalledVersion(serviceExePath)
+                : "unknown";
+
             var backupDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 GpgConstants.AppDataDirectoryName,
                 "backup",
-                GpgConstants.SupportedVersion);
+                installedVersion);
 
             var legacyBackupDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 GpgConstants.LegacyAppDataDirectoryName,
                 "backup",
-                GpgConstants.SupportedVersion);
+                installedVersion);
 
             var hookSourcePath = Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory,

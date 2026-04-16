@@ -83,7 +83,7 @@ namespace GpgPatcher.Gui
                 AutoSize = true,
                 ForeColor = palette.TextSecondary,
                 Font = palette.CreateUiFont(9.25f, FontStyle.Regular),
-                Text = "Target package: com.gof.global  •  UHD portrait target: 1216x2160",
+                Text = "Target package: com.gof.global  •  UHD portrait target: " + GpgConstants.TargetResolutionLabel,
             };
             heroTextPanel.Controls.Add(heroMetaLabel, 0, 2);
 

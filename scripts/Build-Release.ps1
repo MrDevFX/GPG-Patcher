@@ -32,6 +32,34 @@ $packageDir = Join-Path $OutputRoot $packageName
 $zipPath = Join-Path $OutputRoot ($packageName + ".zip")
 $hashPath = Join-Path $OutputRoot "SHA256SUMS.txt"
 
+function Get-Sha256HashValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LiteralPath
+    )
+
+    $getFileHashCommand = Get-Command Get-FileHash -ErrorAction SilentlyContinue
+    if ($null -ne $getFileHashCommand) {
+        return (Get-FileHash -LiteralPath $LiteralPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+
+    $stream = [System.IO.File]::OpenRead($LiteralPath)
+    try {
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $hashBytes = $sha256.ComputeHash($stream)
+        }
+        finally {
+            $sha256.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+
+    return ([System.BitConverter]::ToString($hashBytes).Replace("-", "").ToLowerInvariant())
+}
+
 Write-Host "Building solution..."
 dotnet build $solutionPath -c $Configuration
 
@@ -79,8 +107,8 @@ if (Test-Path $projectLicense) {
 Compress-Archive -Path (Join-Path $packageDir "*") -DestinationPath $zipPath -Force
 
 $hashEntries = @()
-$zipHash = Get-FileHash -LiteralPath $zipPath -Algorithm SHA256
-$hashEntries += ("{0}  {1}" -f $zipHash.Hash.ToLowerInvariant(), (Split-Path -Leaf $zipPath))
+$zipHash = Get-Sha256HashValue -LiteralPath $zipPath
+$hashEntries += ("{0}  {1}" -f $zipHash, (Split-Path -Leaf $zipPath))
 
 Set-Content -LiteralPath $hashPath -Value $hashEntries
 

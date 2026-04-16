@@ -108,11 +108,15 @@ namespace GpgPatcher.Gui
             var summary = InspectSummary.Parse(output);
 
             versionCard.ValueText = summary.Version ?? "-";
-            versionCard.DetailText = summary.IsCompatible ? "Pinned service version matched" : "Expected 26.3.725.2";
+            versionCard.DetailText = summary.IsCompatible
+                ? "Installed build passed compatibility checks"
+                : (string.IsNullOrWhiteSpace(summary.CompatibilityMessage) ? "Compatibility check failed" : summary.CompatibilityMessage);
             versionCard.ApplyTheme(palette, summary.IsCompatible);
 
-            compatibilityCard.ValueText = summary.IsCompatible ? "Compatible" : "Mismatch";
-            compatibilityCard.DetailText = summary.IsCompatible ? "Safe to patch this build" : "Version pin failed";
+            compatibilityCard.ValueText = summary.IsCompatible ? "Compatible" : "Incompatible";
+            compatibilityCard.DetailText = summary.IsCompatible
+                ? "Safe to patch this build"
+                : (string.IsNullOrWhiteSpace(summary.CompatibilityState) ? "Patch blocked by compatibility checks" : summary.CompatibilityState);
             compatibilityCard.ApplyTheme(palette, summary.IsCompatible);
 
             patchCard.ValueText = summary.IsPatched ? "Patched" : "Not patched";
@@ -142,7 +146,7 @@ namespace GpgPatcher.Gui
             heroSubtitleLabel.Text = summary.IsPatched
                 ? "Whiteout Survival is currently using the host-side patched UHD portrait mode."
                 : "Whiteout Survival is currently on the stock Google Play Games launch path.";
-            heroMetaLabel.Text = "Target package: com.gof.global  •  UHD portrait target: 1216x2160  •  Density " + (summary.Density ?? "-");
+            heroMetaLabel.Text = "Target package: com.gof.global  •  UHD portrait target: " + GpgConstants.TargetResolutionLabel + "  •  Density " + (summary.Density ?? "-");
 
             UpdatePatchStatePresentation(summary.IsPatched);
             UpdateCompatibilityPresentation(summary);
@@ -281,7 +285,7 @@ namespace GpgPatcher.Gui
                 return;
             }
 
-            compatibilityChip.Text = summary.IsCompatible ? "Version OK" : "Version Mismatch";
+            compatibilityChip.Text = summary.IsCompatible ? "Compatible" : "Incompatible";
             compatibilityChip.FillColor = summary.IsCompatible ? palette.AccentSoft : palette.DangerSoft;
             compatibilityChip.BorderColor = summary.IsCompatible ? palette.Accent : palette.Danger;
             compatibilityChip.TextColor = summary.IsCompatible

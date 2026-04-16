@@ -88,6 +88,14 @@ namespace GpgPatcher
 
     internal sealed class PatchStatus
     {
+        public string InstalledVersion { get; set; }
+
+        public bool IsCompatible { get; set; }
+
+        public string CompatibilityState { get; set; }
+
+        public string CompatibilityMessage { get; set; }
+
         public bool AvailableSettingsPatched { get; set; }
 
         public bool LaunchSettingsPatched { get; set; }

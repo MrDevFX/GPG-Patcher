@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows-334155?style=flat-square&labelColor=374151" alt="Windows" />
   <img src="https://img.shields.io/badge/App-GUI%20Patcher-2563EB?style=flat-square&labelColor=374151" alt="GUI patcher" />
   <img src="https://img.shields.io/badge/Target-Whiteout%20Survival-0F766E?style=flat-square&labelColor=374151" alt="Whiteout Survival" />
-  <img src="https://img.shields.io/badge/GPG%20Build-26.3.725.2-7C3AED?style=flat-square&labelColor=374151" alt="Google Play Games 26.3.725.2" />
+  <img src="https://img.shields.io/badge/GPG%20Build-Auto--detect-7C3AED?style=flat-square&labelColor=374151" alt="Google Play Games auto-detect" />
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@
 ## Overview
 
 GPG Patcher is a desktop app for Google Play Games for PC systems where Whiteout Survival appears blurry at the stock launch size.
-It applies a host-side patch for `com.gof.global` and keeps the full workflow in one place: inspect the current state, apply the patch, verify the result, and restore the original files if needed.
+It applies a host-side patch for `com.gof.global`, targeting a 2160x3840 portrait launch, and keeps the full workflow in one place: inspect the current state, apply the patch, verify the result, and restore the original files if needed.
 
 <p align="center">
   <img src="Resource/Interface.png" alt="GPG Patcher interface" width="1266" height="894" />
@@ -61,12 +61,14 @@ Download the latest release archive from [GitHub Releases](https://github.com/Mr
 
 ## Build From Source
 
-This project can be built from source on a Windows machine that already has the supported Google Play Games service files installed.
+This project can be built from source on a Windows machine that already has Google Play Games for PC installed.
 
 - Windows
 - .NET SDK with .NET Framework 4.8 targeting support
-- Google Play Games for PC `26.3.725.2`
+- Google Play Games for PC installed locally
 - `ServiceLib.dll`, `Ipc.Protos.dll`, and `Google.Protobuf.dll` available under `C:\Program Files\Google\Play Games\current\service\`
+
+At runtime, GPG Patcher automatically checks whether the required internal target methods and signatures are present before enabling patch operations.
 
 ```powershell
 dotnet build .\GPG-Patcher.slnx -c Release
@@ -82,6 +84,7 @@ The GUI build output is written to `artifacts\app\Release\`, and release bundles
 | Platform | Windows |
 | App | GPG Patcher GUI |
 | Target game | Whiteout Survival (`com.gof.global`) |
-| Target Google Play Games build | `26.3.725.2` |
+| Target portrait mode | `2160x3840` |
+| Compatibility rule | Required Google Play Games target methods and signatures detected automatically |
 | Default service path | `C:\Program Files\Google\Play Games\current\service\` |
-| Backup location | `%LocalAppData%\GpgPatcher\backup\26.3.725.2\` |
+| Backup location | `%LocalAppData%\GpgPatcher\backup\<installed-version>\` |
